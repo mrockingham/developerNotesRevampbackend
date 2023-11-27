@@ -5,20 +5,18 @@ import dotenv from 'dotenv';
 dotenv.config();
 import UserTheme, { ITheme } from './userThemesModel';
 
-
-interface IUser extends Document {
+interface IProviderUser extends Document {
     name: string;
     email: string;
-    password: string;
+    generateVerificationToken(): string;
     verified: boolean;
     theme: Types.ObjectId | ITheme;
-    provider: Boolean;
-    generateVerificationToken(): string;
-    matchPassword(enteredPassword: string): Promise<boolean>;
+    roles: number;
+    provider: boolean;
+
 }
 
-
-const userSchema = new Schema({
+const providerUserSchema = new mongoose.Schema({
     name: {
         type: String,
         required: true,
@@ -30,25 +28,13 @@ const userSchema = new Schema({
         required: true,
         unique: true,
     },
-    verified: {
-        type: Boolean,
-        default: false
-    },
-    verifiedPass: {
-        type: Boolean,
-        default: true
-    },
-    password: {
-        type: String,
-        required: true,
-    },
     roles: {
         type: Number,
         required: false,
     },
     provider: {
         type: Boolean,
-        required: false,
+        required: true,
     },
     theme: {
         type: Schema.Types.ObjectId,
@@ -60,10 +46,8 @@ const userSchema = new Schema({
         timestamps: true,
     })
 
-userSchema.methods.matchPassword = async function (enteredPassword: any) {
-    return await bcrypt.compare(enteredPassword, this.password)
-}
-userSchema.methods.generateVerificationToken = function () {
+
+providerUserSchema.methods.generateVerificationToken = function () {
     const user = this;
     const verificationToken = jwt.sign(
         { ID: user._id },
@@ -74,14 +58,7 @@ userSchema.methods.generateVerificationToken = function () {
     return verificationToken;
 };
 
-userSchema.pre('save', async function (next) {
-    if (!this.isModified('password')) {
-        next()
 
-    }
-    const salt = await bcrypt.genSalt(10)
-    this.password = await bcrypt.hash(this.password, salt)
-})
 
-const User = mongoose.model<IUser>('user', userSchema);
-export default User;
+const ProviderUser = mongoose.model<IProviderUser>('providerUser', providerUserSchema);
+export default ProviderUser;

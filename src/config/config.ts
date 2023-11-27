@@ -1,5 +1,8 @@
 import mongoose, { ConnectOptions } from 'mongoose';
-const MONGODB_URI = 'mongodb+srv://mikeydes:nDXwwShJoGazqd5f@cluster0.ogcbsi7.mongodb.net/?retryWrites=true&w=majority'
+import dotenv from 'dotenv';
+dotenv.config();
+// const MONGODB_URI = 'mongodb+srv://mikeydes:nDXwwShJoGazqd5f@cluster0.ogcbsi7.mongodb.net/?retryWrites=true&w=majority'
+const MONGODB_URI = process.env.MONGO_URI
 
 
 
