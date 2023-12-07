@@ -28,6 +28,6 @@ export const protect = asyncHandler(async (req: Request, res: Response, next: Fu
         // Explicitly return next() to fix the type issue
         return next();
     } catch (error) {
-        res.status(401).json({ message: "Auth failed!" });
+        res.status(401).json({ message: "Auth failed!", error: error });
     }
 });
