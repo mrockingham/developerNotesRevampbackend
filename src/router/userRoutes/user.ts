@@ -11,7 +11,7 @@ router.get("/test", (req: Request, res: Response) => {
 router.post('/', registerUser)
 router.post('/provreg', registerProviderUser)
 router.get("/verify/:token", verifyUser)
-router.put('/update-theme', updateOrAddTheme);
+router.put('/   ', updateOrAddTheme);
 // router.post("/profile/", getUserProfile)
 // router.get("/verify/:token", verifyUser, (req, res) => {
 //     res.redirect("http://localhost:3001/verify")

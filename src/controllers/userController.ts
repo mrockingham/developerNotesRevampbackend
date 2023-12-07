@@ -73,7 +73,7 @@ export const loginUser = async (req: Request, res: Response) => {
     const token = generateToken(user._id);
 
 
-    res.status(200).send({ name: user.name, email: email, token, theme: userTheme });
+    res.status(200).send({ name: user.name, email: email, provider: user.provider, token, theme: userTheme });
   } catch (err) {
     console.log(err);
     return res.status(500).send(err);

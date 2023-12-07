@@ -14,11 +14,14 @@ export const getCodeBlocks = async (req: Request, res: Response) => {
         res.status(404).json({ message: error.message });
     }
 };
-export const getCodeBlocksCategories = async (req: Request, res: Response) => {
-
+export const getAllCodeblocksInCategory = async (req: Request, res: Response) => {
+    const { creator, category, } = req.body
 
     try {
-        const userCodeblocks = await UserCodeBlock.find();
+        const userCodeblocks = await UserCodeBlock.find({
+            creator,
+            category
+        });
         res.status(200).json(userCodeblocks);
     } catch (error) {
         res.status(404).json({ message: error.message });
@@ -27,12 +30,32 @@ export const getCodeBlocksCategories = async (req: Request, res: Response) => {
 
 //Find Code Blocks By Id
 export const getCodeBlockById = async (req: Request, res: Response) => {
-    const id = req.params
+    const { id, creator, category, } = req.body
 
-    console.log('get by id', req.params.creator)
+    console.log('get by id', req.body)
 
     try {
-        const userCodeblock = await UserCodeBlock.findOne(id);
+        const userCodeblock = await UserCodeBlock.findOne(
+            {
+                _id: id,
+                creator: creator,
+                category: category
+
+            }).exec();
+
+        console.log('the user block', userCodeblock)
+        res.status(200).json(userCodeblock);
+    } catch (error) {
+        res.status(404).json({ message: error.message });
+    }
+};
+export const getCodeBlockByCreator = async (req: Request, res: Response) => {
+    const creator = req.body
+
+    console.log('what am i getting', req.body)
+
+    try {
+        const userCodeblock = await UserCodeBlock.find(creator);
         res.status(200).json(userCodeblock);
     } catch (error) {
         res.status(404).json({ message: error.message });
@@ -41,23 +64,36 @@ export const getCodeBlockById = async (req: Request, res: Response) => {
 
 // Find Code Blocks By user Category
 export const getCodeBlockByUserCategory = async (req: Request, res: Response) => {
-    const { creator, category } = req.body
-    const userParams = req.body
-    console.log(creator)
+    const { creator } = req.body
+
+
 
 
     try {
-        const userCodeblock = await UserCodeBlock.find({
-            creator: creator,
-            category: category,
-
-
-        });
-        // console.log(userCodeblock)
-        res.status(200).json(userCodeblock);
+        const codeBlocks = await UserCodeBlock.aggregate([
+            {
+                $match: {
+                    creator,
+                    category: { $exists: true, $ne: '' }
+                }
+            },
+            {
+                $group: {
+                    _id: "$category",  // Group by category
+                    firstCodeBlock: { $first: "$$ROOT" }  // Get the first document for each category
+                }
+            },
+            {
+                $replaceRoot: { newRoot: "$firstCodeBlock" }  // Replace the root with the firstCodeBlock
+            }
+        ]);
+        // const codeBlocks = await UserCodeBlock.find({ creator, category: { $exists: true, $ne: '' } });
+        res.status(200).json(codeBlocks);
     } catch (error) {
         res.status(404).json({ message: error.message });
     }
+
+
 };
 
 // Delete a codeBlock
@@ -105,7 +141,7 @@ export const createCodeBlock = async (req: Request, res: Response) => {
     // const codeBlock = req.body;
     // console.log('create code', codeBlock)
     try {
-        const { creator, provider, title } = req.body
+        const { creator, provider, title, category } = req.body
         const codeBlock = req.body
         const newCodeBlock = new UserCodeBlock(codeBlock);
         if (provider) {
@@ -114,8 +150,19 @@ export const createCodeBlock = async (req: Request, res: Response) => {
             if (creator != providerUser?.email) {
                 return res.status(409).json({ message: "User doesn't exist" })
             }
-            else if (providerUser?.email === creator && prevTitle?.title === title) {
-                res.status(409).json({ message: 'title already exist' })
+            else if (providerUser?.email === creator && prevTitle?.title === title && prevTitle?.category === category) {
+                console.log('the prevTitle', prevTitle)
+                // res.status(409).json({ message: 'title already exist' })
+                try {
+                    const newOrReplace = await UserCodeBlock.replaceOne(
+                        prevTitle?.id,
+                        codeBlock,
+                        { upsert: true }
+                    );
+                    res.status(201).json({ newOrReplace, message: 'Code Block Updated' });
+                } catch (error) {
+                    res.status(409).json({ message: error.message });
+                }
             } else {
                 await newCodeBlock.save();
                 res.status(201).json(newCodeBlock);
@@ -135,7 +182,16 @@ export const createCodeBlock = async (req: Request, res: Response) => {
                 return res.status(409).json({ message: "User doesn't exist" })
             }
             else if (user?.email === creator && prevTitle?.title === title) {
-                return res.status(409).json({ message: 'title already exist' })
+                try {
+                    const newOrReplace = await UserCodeBlock.replaceOne(
+                        { _id: prevTitle?.id },
+                        codeBlock,
+                        { upsert: true }
+                    );
+                    res.status(201).json({ newOrReplace, message: 'Code Block Updated' });
+                } catch (error) {
+                    res.status(409).json({ message: error.message });
+                }
             } else {
                 await newCodeBlock.save();
                 res.status(201).json(newCodeBlock);

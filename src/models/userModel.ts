@@ -48,7 +48,7 @@ const userSchema = new Schema({
     },
     provider: {
         type: Boolean,
-        required: false,
+        required: true,
     },
     theme: {
         type: Schema.Types.ObjectId,
