@@ -7,7 +7,7 @@ import Routes from './router/index';
 dotenv.config();
 
 const server = express();
-const port = process.env.PORT
+const port = 80
 
 connectDB();
 
