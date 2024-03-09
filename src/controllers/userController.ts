@@ -8,6 +8,7 @@ import sgMail from '@sendgrid/mail'
 // mongodb email verification
 
 import nodemailer from "nodemailer"
+import ProviderUser from "../models/providerUserModel";
 
 dotenv.config();
 sgMail.setApiKey(process.env.SENDGRID_API_KEY)
@@ -83,7 +84,7 @@ export const registerUser = async (req: Request, res: Response) => {
   try {
     // Check if the email is in use
     const { name, email, password } = req.body
-    const userExists = await User.findOne({ email })
+    const userExists = await User.findOne({ email }) && ProviderUser.findOne({ email })
 
     console.log('user exist', userExists)
 
@@ -98,7 +99,8 @@ export const registerUser = async (req: Request, res: Response) => {
       const user = await User.create({
         name,
         email,
-        password
+        password,
+        theme: '656111e1def738e6ee24e694'
       })
       // Step 2 - Generate a verification token with the user's ID
       const verificationToken = user.generateVerificationToken();
@@ -134,6 +136,69 @@ export const registerUser = async (req: Request, res: Response) => {
     return res.status(500).send(err);
   }
 }
+// Provider Register 
+export const registerProviderUser = async (req: Request, res: Response) => {
+
+  // console.log('register req', req.body)
+
+  try {
+    // Check if the email is in use
+    const { name, email, provider } = req.body
+    const userExists = await User.findOne({ email })
+    const providerUserExist = await ProviderUser.findOne({ email })
+
+    console.log('user exist', userExists)
+    console.log('provider user exist', providerUserExist)
+
+    if (userExists || providerUserExist) {
+      res.status(409)
+        .send({ error: 'User already exists' });
+      // throw new Error('User already exists')
+    } else {
+
+
+      // Step 1 - Create and save the user
+      const user = await ProviderUser.create({
+        name,
+        email,
+        provider,
+        theme: '656111e1def738e6ee24e694'
+      })
+      // Step 2 - Generate a verification token with the user's ID
+      const verificationToken = user.generateVerificationToken();
+      // Step 3 - Email the user a unique verification link
+
+      const url = `http://localhost:5001/app/users/verify/${verificationToken}`
+      // const url = `https://pure-citadel-43089.herokuapp.com/app/users/verify/${verificationToken}`
+      const msg = {
+        to: email,
+        from: 'osopenworld@gmail.com', // Change to your verified sender
+        subject: 'Devernote Account Verification',
+        html: `Click <a href = '${url}'>here</a> to confirm your email.`,
+      }
+      // sgMail
+      //   .send(msg)
+      //   .then(() => {
+      //     console.log('Email sent')
+      //   })
+      //   .catch((error) => {
+      //     console.error(error)
+      //   }
+      //   )
+
+
+      return res.status(201).send({
+        message: `Sent a verification email to ${email}`,
+        verifySent: true,
+
+      })
+    }
+  } catch (err) {
+    console.log(err)
+    return res.status(500).send(err);
+  }
+}
+
 
 
 export const verifyUser = async (req: Request, res: Response) => {
