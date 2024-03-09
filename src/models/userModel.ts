@@ -4,6 +4,16 @@ import jwt from "jsonwebtoken"
 import dotenv from 'dotenv';
 dotenv.config();
 
+interface IUser extends Document {
+    name: string;
+    email: string;
+    password: string;
+    verified: boolean;
+    generateVerificationToken(): string;
+    matchPassword(enteredPassword: string): Promise<boolean>;
+}
+
+
 const userSchema = new mongoose.Schema({
     name: {
         type: String,
@@ -38,7 +48,7 @@ const userSchema = new mongoose.Schema({
         timestamps: true,
     })
 
-userSchema.methods.matchPassword = async function (enteredPassword: string) {
+userSchema.methods.matchPassword = async function (enteredPassword: any) {
     return await bcrypt.compare(enteredPassword, this.password)
 }
 userSchema.methods.generateVerificationToken = function () {
@@ -46,8 +56,8 @@ userSchema.methods.generateVerificationToken = function () {
     const verificationToken = jwt.sign(
         { ID: user._id },
 
-        process.env.USER_VERIFICATION_TOKEN_SECRET,
-        { expiresIn: "7d" }
+        process.env.VERIFICATION_TOKEN,
+        { expiresIn: "1d" }
     );
     return verificationToken;
 };
@@ -61,5 +71,5 @@ userSchema.pre('save', async function (next) {
     this.password = await bcrypt.hash(this.password, salt)
 })
 
-const User = mongoose.model('user', userSchema);
+const User = mongoose.model<IUser>('user', userSchema);
 export default User;

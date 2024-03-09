@@ -7,7 +7,7 @@ import Routes from './router/index';
 dotenv.config();
 
 const server = express();
-const port = process.env.PORT || 5000;
+const port = process.env.PORT
 
 connectDB();
 
@@ -23,5 +23,5 @@ server.listen(port, () =>
 );
 server.use('/app', Routes);
 server.get('/', (req, res) => {
-    res.status(200).json({ api: 'UP' });
+    res.status(200).json({ api: 'UPppp' });
 });
